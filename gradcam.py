@@ -15,14 +15,15 @@ from keras.preprocessing.image import img_to_array
 from pathlib import Path
 
 import cv2
-from pytorch_grad_cam.utils.image import show_cam_on_image
 
 
-from tensorflow.keras.applications import imagenet_utils
 import numpy as np
-import argparse
 import imutils
-import cv2
+
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+import shutil
 
 
 
@@ -126,7 +127,7 @@ class GradCAM:
         raise ValueError("Could not find 4D layer. Cannot apply GradCAM.")
 
 
-    def compute_heatmap(self, image, eps=1e-8, img_size):
+    def compute_heatmap(self, image, img_size,eps=1e-8):
         # construct our gradient model by supplying (1) the inputs
         # to our pre-trained model, (2) the output of the (presumably)
         # final 4D layer in the network, and (3) the output of the
@@ -182,7 +183,7 @@ class GradCAM:
         return heatmap
 
     def overlay_heatmap(self, heatmap, image, alpha=0.5,
-                        colormap=cv2.COLORMAP_VIRIDIS):
+                        colormap=cv2.COLORMAP_JET):
         # apply the supplied color map to the heatmap and then
         # overlay the heatmap on the input image
         heatmap = cv2.applyColorMap(heatmap, colormap)
@@ -207,16 +208,16 @@ def gradCAM_func(last_conv_layer_name, img_size):
                     metrics=['accuracy'])
 
 
-    ##PREPROCESSING FOR GRADCAM
-    preprocess_input = keras.applications.xception.preprocess_input
-    decode_predictions = keras.applications.xception.decode_predictions
 
     
     #obtain query_images_y as array
-    with open("query-images-y/labels.txt", "r+") as f:
-        query_images_y = np.loadtxt(f.readlines())
-    query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
-    
+    with open("query-images-y/labels.txt", "r") as f:
+        #query_images_y = np.loadtxt(f.readlines())
+        query_images_y = f.read()[1:-1].split(',')
+    #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
+    query_images_y = [int(i) for i in query_images_y]
+
+    shutil.rmtree('/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images-grad-cam')
     Path("/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images-grad-cam").mkdir(parents=True, exist_ok=True)
     for i in range(len(query_images_y)):
         img_path = '/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images/' + str(i) + '.jpg'
@@ -248,6 +249,5 @@ def gradCAM_func(last_conv_layer_name, img_size):
         #heatmap = make_gradcam_heatmap(img_array_gray, model, last_conv_layer_name)
         #save_and_display_gradcam('/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images-grad-cam/' + str(i) + '.jpg', heatmap, alpha = 0.9)
 
-img_size = (28,28)
-last_conv_layer_name = "visual_layer"
-gradCAM_func(last_conv_layer_name, img_size)
+
+gradCAM_func("visual_layer", (28,28))
