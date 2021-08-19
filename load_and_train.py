@@ -16,7 +16,7 @@ from pathlib import Path
 
 import cv2
 
-def prepare_fmnist(ratio, num_classes=10):
+def prepare_fmnist(ratio, run_no, num_classes=10):
     # Prepare fmnist dataset
     (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
     nrow, ncol = 28, 28
@@ -40,14 +40,14 @@ def prepare_fmnist(ratio, num_classes=10):
         x_train, y_train, train_size=ratio)
     X_test, X_test_final, y_test, y_test_final = train_test_split(
         x_test, y_test, train_size=ratio)
-    np.save('dataset/X_train', X_train)
-    np.save('dataset/X_test', X_test)
-    np.save('dataset/X_add', X_add)
-    np.save('dataset/X_test_final', X_test_final)
-    np.save('dataset/y_train', y_train)
-    np.save('dataset/y_test', y_test)
-    np.save('dataset/y_add', y_add)
-    np.save('dataset/y_test_final', y_test_final)
+    np.save('dataset/run' + str(run_no) + '/X_train', X_train)
+    np.save('dataset/run' + str(run_no) + '/X_test', X_test)
+    np.save('dataset/run' + str(run_no) + '/X_add', X_add)
+    np.save('dataset/run' + str(run_no) + '/X_test_final', X_test_final)
+    np.save('dataset/run' + str(run_no) + '/y_train', y_train)
+    np.save('dataset/run' + str(run_no) + '/y_test', y_test)
+    np.save('dataset/run' + str(run_no) + '/y_add', y_add)
+    np.save('dataset/run' + str(run_no) + '/y_test_final', y_test_final)
     return (X_train, y_train), (X_test, y_test), (X_add, y_add), (X_test_final, y_test_final), input_shape
 
 def build_cnn(input_shape, num_classes):
@@ -62,9 +62,9 @@ def build_cnn(input_shape, num_classes):
     model = Model(inputs=[x], outputs=[y])
     return model
 
-def train_model(ratio, num_epochs = 25, toStoreQuery=False):
+def train_model(ratio, run_no, num_epochs = 25, toStoreQuery=False):
     # Get mnist dataset
-    (X_train, y_train), (X_test, y_test), (X_add, y_add), (X_test_final, y_test_final), input_shape = prepare_fmnist(ratio)
+    (X_train, y_train), (X_test, y_test), (X_add, y_add), (X_test_final, y_test_final), input_shape = prepare_fmnist(ratio, run_no)
     # Build & compile model
     model = build_cnn(input_shape, 10)
     model.compile(loss=keras.losses.categorical_crossentropy,
@@ -76,7 +76,7 @@ def train_model(ratio, num_epochs = 25, toStoreQuery=False):
                      epochs=num_epochs,
                      verbose=1)
     # Save model
-    model.save(f'model/mnist_{get_date()}')
+    model.save(f'model/fmnist_run{run_no}')
     print('Model saved!')
 
     query_images_y = []
@@ -88,25 +88,25 @@ def train_model(ratio, num_epochs = 25, toStoreQuery=False):
     if toStoreQuery:
         res = [i for i, val in enumerate(y_pred != y_test_max) if val]
         count = 0
-        shutil.rmtree('/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images')
-        Path("/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images").mkdir(parents=True, exist_ok=True)
-        Path("/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images-y").mkdir(parents=True, exist_ok=True)
+        shutil.rmtree('/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images/run' + str(run_no))
+        Path("/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
+        Path("/Users/ananyaaggarwal/Desktop/grad-cam-tf/query-images-y/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
         for i in res:
             img = load_image(X_test[i])
             img_array = X_test[i] * 255
-            cv2.imwrite('query-images/' + str(count) + '.jpg', img_array)
+            cv2.imwrite('query-images/run' + str(run_no) + '/' + str(count) + '.jpg', img_array)
             query_images_y.append(y_test_max[i])
             query_images_index.append(i)
             count += 1
-        with open('query-images-y/labels.txt', 'w') as f:
+        with open('query-images-y/run' + str(run_no) + '/labels.txt', 'w') as f:
             f.write(str(query_images_y))
             """for item in query_images_y:
                 item = str(item)[1:-1]
                 f.write("%s\n" % item)"""
-        with open('query-images-y/indices.txt', 'w') as f:
+        with open('query-images-y/run' + str(run_no) + '/indices.txt', 'w') as f:
             f.write(str(query_images_index))
             """for item in query_images_index:
                 item = str(item)[1:-1]
                 f.write("%s\n" % item)"""
 
-train_model(0.5, num_epochs=10, toStoreQuery=True)
+#train_model(0.5, num_epochs=10, toStoreQuery=True)

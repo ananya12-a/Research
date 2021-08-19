@@ -103,7 +103,7 @@ tqdm==4.51.0==pyhd3eb1b0_0
 traitlets==5.0.5==pypi_0
 ttach==0.0.3==pypi_0
 typing-extensions==3.7.4.3==pypi_0
-urllib3==1.25.11==py_0
+urllib3==1.26.5==py_0
 wcwidth==0.2.5==pypi_0
 werkzeug==2.0.1==pypi_0
 wheel==0.35.1==pyhd3eb1b0_0

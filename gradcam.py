@@ -16,7 +16,7 @@ from pathlib import Path
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
+def grad_cam(run_no, model_name='mnist_2021-07-30', threshold = 0.5):
     #load model
     #model = load_model(f'model/mnist_{get_date()}')
     model = load_model('model/' + model_name)
@@ -29,7 +29,7 @@ def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
 
 
     #obtain query_images_y as array
-    with open("query-images-y/labels.txt", "r") as f:
+    with open("query-images-y/run" + str(run_no) + "/labels.txt", "r") as f:
         #query_images_y = np.loadtxt(f.readlines())
         query_images_y = f.read()[1:-1].split(',')
     #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
@@ -37,22 +37,22 @@ def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
 
 
     #obtain query_images_index as array
-    with open("query-images-y/indices.txt", "r") as f:
+    with open("query-images-y/run" + str(run_no) + "/indices.txt", "r") as f:
         query_images_index = f.read()[1:-1].split(',')
     query_images_index = [int(i) for i in query_images_index]
 
-    X_test = np.load('dataset/X_test.npy')
+    X_test = np.load('dataset/run' + str(run_no) + '/X_test.npy')
 
-    shutil.rmtree('query-images-grad-cam-all')
-    Path("query-images-grad-cam-all").mkdir(parents=True, exist_ok=True)
-    shutil.rmtree('query-images-grad-cam-heatmap')
-    Path("query-images-grad-cam-heatmap").mkdir(parents=True, exist_ok=True)
-    shutil.rmtree('query-images-grad-cam-red-heatmap')
-    Path("query-images-grad-cam-red-heatmap").mkdir(parents=True, exist_ok=True)
-    shutil.rmtree('query-images-grad-cam-final')
-    Path("query-images-grad-cam-final").mkdir(parents=True, exist_ok=True)
-    shutil.rmtree('query-images-final')
-    Path("query-images-final").mkdir(parents=True, exist_ok=True)
+    shutil.rmtree("query-images-grad-cam-all/run" + str(run_no))
+    Path("query-images-grad-cam-all/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
+    shutil.rmtree("query-images-grad-cam-heatmap/run" + str(run_no))
+    Path("query-images-grad-cam-heatmap/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
+    shutil.rmtree("query-images-grad-cam-red-heatmap/run" + str(run_no))
+    Path("query-images-grad-cam-red-heatmap/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
+    shutil.rmtree("query-images-grad-cam-final/run" + str(run_no))
+    Path("query-images-grad-cam-final/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
+    shutil.rmtree("query-images-final/run" + str(run_no))
+    Path("query-images-final/run" + str(run_no)).mkdir(parents=True, exist_ok=True)
     for i in range(len(query_images_y)):
         test_input = X_test[query_images_index[i]].reshape(1,X_test.shape[1],X_test.shape[2],1)
 
@@ -82,11 +82,11 @@ def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
         heatmap_saved = cv2.resize(heatmap, (28,28))
         heatmap_saved = np.uint8(255*heatmap_saved)
         heatmap_saved = cv2.applyColorMap(heatmap_saved, cv2.COLORMAP_JET)
-        cv2.imwrite('query-images-grad-cam-heatmap/' + str(i) + '.jpg', heatmap_saved)
+        cv2.imwrite('query-images-grad-cam-heatmap/run' + str(run_no) + '/' + str(i) + '.jpg', heatmap_saved)
         red_heatmap = heatmap_saved.copy()
         red_heatmap[:, :, 0] = 0
         red_heatmap[:, :, 1] = 0
-        cv2.imwrite('query-images-grad-cam-red-heatmap/' + str(i) + '.jpg', red_heatmap)
+        cv2.imwrite('query-images-grad-cam-red-heatmap/run' + str(run_no) + '/' + str(i) + '.jpg', red_heatmap)
         red_heatmap = np.uint8(red_heatmap/255)
         
         #create input to compare to red heatmap
@@ -104,8 +104,8 @@ def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
                         
         #print(red_heatmap[:,:,2])
         if nonblack_count > 200:
-            cv2.imwrite('query-images-grad-cam-final/' + str(i) + '.jpg', heatmap_saved*0.5 + input_compare)
-            cv2.imwrite('query-images-final/' + str(i) + '.jpg', input_compare*255)
+            cv2.imwrite('query-images-grad-cam-final/run' + str(run_no) + '/' + str(i) + '.jpg', heatmap_saved*0.5 + input_compare)
+            cv2.imwrite('query-images-final/run' + str(run_no) + '/' + str(i) + '.jpg', input_compare*255)
         
 
         # Add 3 channels for coloring the heatmap
@@ -122,6 +122,6 @@ def grad_cam(model_name='mnist_2021-07-30', threshold = 0.5):
         # Apply heatmap on the original image
         superimposed_img = heatmap_resized*0.5 + input_resized
         # Save
-        cv2.imwrite('query-images-grad-cam-all/' + str(i) + '.jpg', superimposed_img)
+        cv2.imwrite('query-images-grad-cam-all/run' + str(run_no) + '/' + str(i) + '.jpg', superimposed_img)
 
-grad_cam()
+#grad_cam()

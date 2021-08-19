@@ -9,6 +9,13 @@ from glob import glob
 import scipy.spatial
 import cv2
 
+
+from scipy.stats import uniform
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import RandomizedSearchCV
+
+
 from util import *
 
 import os
@@ -35,22 +42,21 @@ def Nmaxelements_cond(list1, N, y_add, query_y_value):
     return index_list
 
 
-with open("ratios/ratios.txt", "r") as f:
+def quadratic(model_name='mnist_2021-07-30', num_epochs = 5, tol = 1E-2):
+    with open("ratios/run" + str(run_no) + "/ratios.txt", "r") as f:
         #query_images_y = np.loadtxt(f.readlines())
         ratios = f.read()[1:-1].split(',')
-#query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
-ratios = [float(i) for i in ratios]
-
-
-
-with open("query-images-y/labels.txt", "r") as f:
-        #query_images_y = np.loadtxt(f.readlines())
-        query_images_y = f.read()[1:-1].split(',')
     #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
-query_images_y = [int(i) for i in query_images_y]
-query_images_fn = glob('query-images-final/*')
+    ratios = [float(i) for i in ratios]
 
-def quadratic(model_name='mnist_2021-07-30', num_epochs = 5, tol = 1E-2):
+
+
+    with open("query-images-y/run" + str(run_no) + "/labels.txt", "r") as f:
+            #query_images_y = np.loadtxt(f.readlines())
+            query_images_y = f.read()[1:-1].split(',')
+        #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
+    query_images_y = [int(i) for i in query_images_y]
+    query_images_fn = glob('query-images-final/*')
     X_test = np.load('dataset/X_test.npy')
     y_test = np.load('dataset/y_test.npy')
     X_add = np.load('dataset/X_add.npy')
@@ -131,4 +137,46 @@ def quadratic(model_name='mnist_2021-07-30', num_epochs = 5, tol = 1E-2):
     print(a,b,c)
 
 
-quadratic()
+#quadratic()
+
+
+def quadratic_lib(model_name='mnist_2021-07-30'):
+    with open("ratios/run" + str(run_no) + "/ratios.txt", "r") as f:
+        #query_images_y = np.loadtxt(f.readlines())
+        ratios = f.read()[1:-1].split(',')
+    #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
+    ratios = [float(i) for i in ratios]
+
+
+
+    with open("query-images-y/run" + str(run_no) + "/labels.txt", "r") as f:
+            #query_images_y = np.loadtxt(f.readlines())
+            query_images_y = f.read()[1:-1].split(',')
+        #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
+    query_images_y = [int(i) for i in query_images_y]
+    query_images_fn = glob('query-images-final/*')
+    X_test = np.load('dataset/X_test.npy')
+    y_test = np.load('dataset/y_test.npy')
+    X_train = np.load('dataset/X_train.npy')
+    y_train = np.load('dataset/y_train.npy')
+    model = load_model('model/' + model_name)
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=keras.optimizers.Adadelta(),
+                  metrics=['accuracy'])
+    accuracy = [model.evaluate(X_test, y_test, verbose=0)[1]]
+    # define evaluation
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+
+    # define search space
+    space = dict()
+    space['A'] = uniform(1,100)
+    space['B'] = uniform(1,100)
+    space['C'] = uniform(1,100)
+    # define search
+    search = RandomizedSearchCV(model, space, n_iter=500, scoring='accuracy', n_jobs=-1, cv=cv, random_state=1)
+    # execute search
+    result = search.fit(X_train, y_train)
+    # summarize result
+    print('Best Score: %s' % result.best_score_)
+    print('Best Hyperparameters: %s' % result.best_params_)
+quadratic_lib()

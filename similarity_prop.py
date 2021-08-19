@@ -24,18 +24,19 @@ def Nmaxelements(list1, N):
           
     return index_list
 
-def find_similar_images():
-    query_images_fn = glob('query-images-final/*')
-    X_train = np.load('dataset/X_train.npy')
-    y_train = np.load('dataset/y_train.npy')
+def find_similar_images(run_no):
+    query_images_fn = glob('query-images-final/run' + str(run_no) + '/*')
+    X_train = np.load('dataset/run' + str(run_no) + '/X_train.npy')
+    y_train = np.load('dataset/run' + str(run_no) + '/y_train.npy')
     y_train =  np.array([np.argmax(rec) for rec in y_train])
     #obtain query_images_y as array
-    with open("query-images-y/labels.txt", "r") as f:
+    with open("query-images-y/run" + str(run_no) + "/labels.txt", "r") as f:
         #query_images_y = np.loadtxt(f.readlines())
         query_images_y = f.read()[1:-1].split(',')
     #query_images_y = np.array([np.argmax(rec) for rec in query_images_y])
     query_images_y = [int(i) for i in query_images_y]
     ratio = []
+    score = []
     for i in range(len(query_images_fn)):
         query_image = cv2.imread(query_images_fn[i])
         query_image = cv2.cvtColor(query_image, cv2.COLOR_BGR2GRAY)
@@ -46,17 +47,18 @@ def find_similar_images():
             similarity.append(scipy.spatial.distance.cosine(query_image.flatten(), X_train[j].flatten()))
         index_vals = Nmaxelements(similarity, 50)
         class_count = 0
-        query_image_num = int(query_images_fn[i][query_images_fn[i].index('/')+1:-4])
+        query_image_num = int(query_images_fn[i][query_images_fn[i].index('/')+6:-4])
         query_image_y = query_images_y[query_image_num]
         for j in range(len(index_vals)):
             #cv2.imwrite('temp/' + str(j) + '.jpg', X_train[index_vals[j]]*255)
             if y_train[index_vals[j]] == query_image_y:
-                class_count += 1
+                class_count += 1#len(index_vals)-j
         ratio.append(class_count/len(index_vals))
+        #score.append(class_count)
         #break
         #cos_sim=np.dot(query_2D,B)/(np.linalg.norm(query_2D)*np.linalg.norm(B))
-    with open('ratios/ratios.txt', 'w') as f:
+    with open('ratios/run' + str(run_no) + '/ratios.txt', 'w') as f:
         f.write(str(ratio))
 
 
-find_similar_images()
+#find_similar_images()
